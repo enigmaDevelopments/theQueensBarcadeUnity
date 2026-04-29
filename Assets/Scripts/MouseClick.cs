@@ -33,6 +33,7 @@ public class MouseClick : MonoBehaviour
     private static bool clicked = false;
     private static byte totalClicked = 0;
 
+    
     void Awake()
     {
         boarder.color = originalBoarderColor;
@@ -43,7 +44,12 @@ public class MouseClick : MonoBehaviour
         queens = new Transform[4];
         for (int i = 0; i < 4; i++)
             queens[i] = GameObject.FindGameObjectWithTag("queen" + (i + 1)).transform;
+        moveQueen(0, 13);
+        moveQueen(1, 14);
+        moveQueen(3, 3);
+
         camera = Camera.main;
+
     }
     void OnMouseEnter()
     {
@@ -77,5 +83,12 @@ public class MouseClick : MonoBehaviour
             StartCoroutine(DisableCamera());
             totalClicked = 0;
         }
+    }
+
+    public void moveQueen (int queen, int position)
+    {
+        Vector2 pos = new Vector2((position % 4), -(position / 4));
+        Debug.Log(pos);
+        queens[queen].localPosition = pos;
     }
 }
