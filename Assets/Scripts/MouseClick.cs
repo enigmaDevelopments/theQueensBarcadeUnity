@@ -1,12 +1,5 @@
 using UnityEngine;
 using System.Collections;
-public struct Board
-{
-    public ushort blocks;
-    public byte p1;
-    public byte p2;
-
-}
 public class MouseClick : MonoBehaviour
 {
     public SpriteRenderer boarder;
@@ -19,12 +12,7 @@ public class MouseClick : MonoBehaviour
     public byte index;
 
     public static Transform[] queens;
-    public static Board board = new Board
-    {
-        blocks = 0,
-        p1 = 0xDE,
-        p2 = 0x3
-    };
+    public int board;
 
     private bool mouseOver;
 
@@ -87,6 +75,13 @@ public class MouseClick : MonoBehaviour
 
     public void moveQueen (int queen, int position)
     {
+        if (queen == 0)
+            board = (position << 20) | (board & 0xFFF0FF);
+        if (queen == 2)
+            board = (position << 8) | (board & 0xFFFF0F);
+        else if (queen == 1)
+            board = (position << 16) | (board & 0xFF0F);
+
         Vector2 pos = new Vector2((position % 4), -(position / 4));
         Debug.Log(pos);
         queens[queen].localPosition = pos;
