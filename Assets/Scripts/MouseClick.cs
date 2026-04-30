@@ -21,6 +21,13 @@ public class MouseClick : MonoBehaviour
     private static bool clicked = false;
     private static byte totalClicked = 0;
 
+    private int[] blockPositions =
+    {
+        0b1, 0b10, 0b100, 0b1000,
+        0b1_0000, 0b10_0000, 0b100_0000, 0b1000_0000,
+        0b1_0000_0000, 0b10_0000_0000, 0b100_0000_0000, 0b1000_0000_0000,
+        0b1_0000_0000_0000, 0b10_0000_0000_0000, 0b100_0000_0000_0000, 0b1000_0000_0000_0000
+    };
     
     void Awake()
     {
@@ -52,6 +59,7 @@ public class MouseClick : MonoBehaviour
         totalClicked++;
         if (clicked || !mouseOver) return;
         clicked = true;
+        board |= blockPositions[index];
         boarder.color = selectedBoarderColor;
         tile.color = blockedTileColor;
         clicked = false;
@@ -76,11 +84,13 @@ public class MouseClick : MonoBehaviour
     public void moveQueen (int queen, int position)
     {
         if (queen == 0)
-            board = (position << 20) | (board & 0xFFF0FF);
-        if (queen == 2)
-            board = (position << 8) | (board & 0xFFFF0F);
+            board = (position << 16) | (board & 0xFFF0FF);
         else if (queen == 1)
-            board = (position << 16) | (board & 0xFF0F);
+            board = (position << 20) | (board & 0xFF0FFF);
+        else if (queen == 2)
+            board = (position << 24) | (board & 0xF0FFFF);
+        else if (queen == 3)
+            board = (position << 28) | (board & 0x0FFFFF);
 
         Vector2 pos = new Vector2((position % 4), -(position / 4));
         Debug.Log(pos);
