@@ -20,53 +20,12 @@ public class MouseClick : MonoBehaviour
     public static Transform[] queens;
 
     private bool mouseOver;
-
     private static new Camera camera; 
     private static bool initialized = false;
-    private static bool clicked = false;
     private static byte totalClicked = 0;
+    private static byte selected = 16;
     private static BoardState board;
-    private static int[][] positions = 
-    {
-        new int[]
-        {
-        BitVector32.CreateMask(0),
-        BitVector32.CreateMask(1),
-        BitVector32.CreateMask(2),
-        BitVector32.CreateMask(3),
-        BitVector32.CreateMask(4),
-        BitVector32.CreateMask(5),
-        BitVector32.CreateMask(6),
-        BitVector32.CreateMask(7),
-        BitVector32.CreateMask(8),
-        BitVector32.CreateMask(9),
-        BitVector32.CreateMask(10),
-        BitVector32.CreateMask(11),
-        BitVector32.CreateMask(12),
-        BitVector32.CreateMask(13),
-        BitVector32.CreateMask(14),
-        BitVector32.CreateMask(15)
-        },
-        new int[]
-        {
-        BitVector32.CreateMask(16),
-        BitVector32.CreateMask(17),
-        BitVector32.CreateMask(18),
-        BitVector32.CreateMask(19),
-        BitVector32.CreateMask(20),
-        BitVector32.CreateMask(21),
-        BitVector32.CreateMask(22),
-        BitVector32.CreateMask(23),
-        BitVector32.CreateMask(24),
-        BitVector32.CreateMask(25),
-        BitVector32.CreateMask(26),
-        BitVector32.CreateMask(27),
-        BitVector32.CreateMask(28),
-        BitVector32.CreateMask(29),
-        BitVector32.CreateMask(30),
-        BitVector32.CreateMask(31)
-        }
-    };
+    private static int[][] positions = {new int[16],new int[16]};
     private static BitVector32.Section[] queenLocations = new BitVector32.Section[4];
 
     void Awake()
@@ -75,7 +34,19 @@ public class MouseClick : MonoBehaviour
         tile.color = originalTileColor;
         if (initialized) return;
         initialized = true;
-        BitVector32.Section lower = BitVector32.CreateSection(-1);
+        board.board = new BitVector32(0);
+        board.queens = new BitVector32(0);
+
+        positions[0][0] = BitVector32.CreateMask();
+        for (int i = 0; i < 2; i++)
+        {
+            for (int j = 1; j < 16; j++)
+                positions[i][j] = BitVector32.CreateMask(positions[i][j - 1]);
+            positions[1][0] = BitVector32.CreateMask(positions[0][15]);
+        }
+
+        BitVector32.Section lower = BitVector32.CreateSection(0xFF);
+        lower = BitVector32.CreateSection(0xFF, lower);
         queenLocations[0] = BitVector32.CreateSection(15, lower);
         queenLocations[1] = BitVector32.CreateSection(15, queenLocations[0]);
         queenLocations[2] = BitVector32.CreateSection(15, queenLocations[1]);
@@ -88,6 +59,7 @@ public class MouseClick : MonoBehaviour
         moveQueen(0, 13);
         moveQueen(1, 14);
         moveQueen(3, 3);
+        moveQueen(2, 0);
 
         camera = Camera.main;
 
@@ -103,13 +75,24 @@ public class MouseClick : MonoBehaviour
     public void Click()
     {
         totalClicked++;
-        if (clicked || !mouseOver) return;
-        clicked = true;
+        if (!mouseOver) return;
+        if (board.board[positions[0][index]])
+            return;
+        else if (selected == index)
+        {
+            boarder.color = originalBoarderColor;
+            selected = 16;
+            return;
+        }
+        else if (board.queens[positions[0][index]] || board.queens[positions[1][index]])
+        {
+            boarder.color = selectedBoarderColor;
+            selected = index;
+                return;
+        }
         board.board[positions[0][index]] = true;
         boarder.color = selectedBoarderColor;
         tile.color = blockedTileColor;
-        clicked = false;
-        
     }
     IEnumerator DisableCamera()
     {
@@ -119,7 +102,9 @@ public class MouseClick : MonoBehaviour
     void LateUpdate()
     {
         if (Input.GetMouseButtonUp(0))
+        {
             Click();
+        }
         if (totalClicked == 16)
         {
             StartCoroutine(DisableCamera());
@@ -131,10 +116,9 @@ public class MouseClick : MonoBehaviour
     {
         int oldPosition = board.board[queenLocations[queen]];
         board.queens[positions[queen/2][oldPosition]] = false;
-        board.board[positions[queen/2][position]] = true;
+        board.queens[positions[queen/2][position]] = true;
         board.board[queenLocations[queen]] = position;
         Vector2 pos = new Vector2((position % 4), -(position / 4));
-        Debug.Log(pos);
         queens[queen].localPosition = pos;
     }
 }
