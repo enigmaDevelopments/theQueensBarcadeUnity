@@ -1,11 +1,7 @@
-using UnityEngine;
 using System.Collections;
 using System.Collections.Specialized;
-public struct BoardState
-{
-    public BitVector32 board;
-    public BitVector32 queens;
-}
+using UnityEngine;
+using UnityEngine.UI;
 public class MouseClick : MonoBehaviour
 {
     public SpriteRenderer boarder;
@@ -20,12 +16,15 @@ public class MouseClick : MonoBehaviour
     public static Transform[] queens;
 
     private bool mouseOver;
+    private bool clicked;
+    private static bool clicking;
     private static new Camera camera; 
     private static bool initialized = false;
     private static byte totalClicked = 0;
     private static byte selected = 16;
-    private static BoardState board;
-    private static int[][] positions = {new int[16],new int[16]};
+    
+    private static BitVector32 board;
+    private static int[] positions = new int[16];
     private static BitVector32.Section[] queenLocations = new BitVector32.Section[4];
 
     void Awake()
@@ -34,24 +33,18 @@ public class MouseClick : MonoBehaviour
         tile.color = originalTileColor;
         if (initialized) return;
         initialized = true;
-        board.board = new BitVector32(0);
-        board.queens = new BitVector32(0);
-
-        positions[0][0] = BitVector32.CreateMask();
-        for (int i = 0; i < 2; i++)
-        {
-            for (int j = 1; j < 16; j++)
-                positions[i][j] = BitVector32.CreateMask(positions[i][j - 1]);
-            positions[1][0] = BitVector32.CreateMask(positions[0][15]);
-        }
-
+        #region bitvector setup
+        board = new BitVector32(0);
+        positions[0] = BitVector32.CreateMask();
+        for (int i = 1; i < 16; i++)
+            positions[i] = BitVector32.CreateMask(positions[i - 1]);
         BitVector32.Section lower = BitVector32.CreateSection(0xFF);
         lower = BitVector32.CreateSection(0xFF, lower);
         queenLocations[0] = BitVector32.CreateSection(15, lower);
         queenLocations[1] = BitVector32.CreateSection(15, queenLocations[0]);
         queenLocations[2] = BitVector32.CreateSection(15, queenLocations[1]);
         queenLocations[3] = BitVector32.CreateSection(15, queenLocations[2]);
-
+        #endregion
 
         queens = new Transform[4];
         for (int i = 0; i < 4; i++)
@@ -67,16 +60,23 @@ public class MouseClick : MonoBehaviour
     void OnMouseEnter()
     {
         mouseOver = true;
+        if (clicking)
+        {
+            clicked = true;
+            clicking = false;
+        }
     }
     void OnMouseExit()
     {
         mouseOver = false;
+        clicking = false;
     }
     public void Click()
     {
         totalClicked++;
-        if (!mouseOver) return;
-        if (board.board[positions[0][index]])
+        Debug.Log(clicked);
+        if (!mouseOver || !clicked) return;
+        if (board[positions[index]])
             return;
         else if (selected == index)
         {
@@ -84,13 +84,15 @@ public class MouseClick : MonoBehaviour
             selected = 16;
             return;
         }
-        else if (board.queens[positions[0][index]] || board.queens[positions[1][index]])
-        {
-            boarder.color = selectedBoarderColor;
-            selected = index;
+        for (int i = 0; i < 4; i++)
+            if (board[queenLocations[i]] == index)
+            {
+                boarder.color = selectedBoarderColor;
+                selected = index;
                 return;
-        }
-        board.board[positions[0][index]] = true;
+            }
+
+        board[positions[index]] = true;
         boarder.color = selectedBoarderColor;
         tile.color = blockedTileColor;
     }
@@ -101,9 +103,12 @@ public class MouseClick : MonoBehaviour
     }
     void LateUpdate()
     {
+        if (Input.GetMouseButtonDown(0))
+            clicking = true;
         if (Input.GetMouseButtonUp(0))
         {
             Click();
+            clicked = false;
         }
         if (totalClicked == 16)
         {
@@ -114,10 +119,7 @@ public class MouseClick : MonoBehaviour
 
     public void moveQueen (int queen, int position)
     {
-        int oldPosition = board.board[queenLocations[queen]];
-        board.queens[positions[queen/2][oldPosition]] = false;
-        board.queens[positions[queen/2][position]] = true;
-        board.board[queenLocations[queen]] = position;
+        board[queenLocations[queen]] = position;
         Vector2 pos = new Vector2((position % 4), -(position / 4));
         queens[queen].localPosition = pos;
     }
