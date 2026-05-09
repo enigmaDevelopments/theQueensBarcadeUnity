@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Specialized;
 using UnityEngine;
+using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.UI;
 public class MouseClick : MonoBehaviour
 {
@@ -122,5 +123,24 @@ public class MouseClick : MonoBehaviour
         board[queenLocations[queen]] = position;
         Vector2 pos = new Vector2((position % 4), -(position / 4));
         queens[queen].localPosition = pos;
+    }
+
+    public bool[] checkWin()
+    {
+        bool[] lose = {false, false};
+        for (int i = 0; i < 4; i+=2)
+        {
+            ushort blocks = (ushort)board.Data;
+            ushort queen = (ushort)(1 << board[queenLocations[i]]);
+            queen |= (ushort)(1 << board[queenLocations[i + 1]]);
+            blocks = (ushort)~(blocks | queen);
+            uint surrounding = (((uint)0b10_0000_0000_0010_0010 << board[queenLocations[i]]) | ((uint)0b10_0000_0000_0010_0010 << board[queenLocations[i + 1]])) & 0b1_0001_0001_1111_0001_0001_0001_0001;
+            surrounding |= (((uint)0b1000_0000_0000_1000 << board[queenLocations[i]]) | ((uint)0b1000_0000_0000_1000 << board[queenLocations[i + 1]]) | (uint)(queen >> 1)) & 0b1000_1000_1000_1111_1000_1000_1000_1000;
+            surrounding |= (((uint)0b1_0000_0000_0001_0000 << board[queenLocations[i]]) | ((uint)0b1_0000_0000_0001_0000 << board[queenLocations[i + 1]])) & 0b1111_0000_0000_0000_0000;
+            ushort smallSurounding = (ushort)(surrounding | (surrounding >> 12));
+            smallSurounding &= blocks;
+            lose[i / 2] = smallSurounding == 0;
+        }
+        return lose;
     }
 }
