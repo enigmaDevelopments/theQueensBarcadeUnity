@@ -19,11 +19,11 @@ public class MouseClick : MonoBehaviour
     private bool mouseOver;
     private bool clicked;
     private static bool clicking;
-    private static new Camera camera; 
+    private static new Camera camera;
     private static bool initialized = false;
     private static byte totalClicked = 0;
     private static byte selected = 16;
-    
+
     private static BitVector32 board;
     private static int[] positions = new int[16];
     private static BitVector32.Section[] queenLocations = new BitVector32.Section[4];
@@ -118,7 +118,7 @@ public class MouseClick : MonoBehaviour
         }
     }
 
-    public void moveQueen (int queen, int position)
+    public void moveQueen(int queen, int position)
     {
         board[queenLocations[queen]] = position;
         Vector2 pos = new Vector2((position % 4), -(position / 4));
@@ -127,8 +127,8 @@ public class MouseClick : MonoBehaviour
 
     public bool[] checkWin()
     {
-        bool[] lose = {false, false};
-        for (int i = 0; i < 4; i+=2)
+        bool[] lose = { false, false };
+        for (int i = 0; i < 4; i += 2)
         {
             ushort blocks = (ushort)board.Data;
             uint queen = (uint)1 << board[queenLocations[i]];
@@ -141,6 +141,24 @@ public class MouseClick : MonoBehaviour
             smallSurounding &= blocks;
             lose[i / 2] = smallSurounding == 0;
         }
-        return lose; 
+        return lose;
+    }
+
+    public bool checkMove(int queen, int position)
+    {
+        int lower = Mathf.Min(board[queenLocations[queen]], position);
+        int upper = Mathf.Max(board[queenLocations[queen]], position);
+        int direction = 0;
+        foreach (int dir in new int[] {1, 3, 4, 5 })
+            if (upper-lower % dir == 0)
+            {
+                direction = dir;
+                break;
+            }
+        if (direction == 0) return false;
+        for (int i = lower + direction; i < upper; i += direction)
+            if (board[positions[i]] || (direction % 6 == 1 && i % 4 == 0) || (direction == 3 && i % 4 == 1))
+                return false;
+        return true;
     }
 }
