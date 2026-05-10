@@ -131,16 +131,16 @@ public class MouseClick : MonoBehaviour
         for (int i = 0; i < 4; i+=2)
         {
             ushort blocks = (ushort)board.Data;
-            ushort queen = (ushort)(1 << board[queenLocations[i]]);
-            queen |= (ushort)(1 << board[queenLocations[i + 1]]);
-            blocks = (ushort)~(blocks | queen);
+            uint queen = (uint)1 << board[queenLocations[i]];
+            queen |= (uint)1 << board[queenLocations[i + 1]];
             uint surrounding = (((uint)0b10_0000_0000_0010_0010 << board[queenLocations[i]]) | ((uint)0b10_0000_0000_0010_0010 << board[queenLocations[i + 1]])) & 0b1_0001_0001_1111_0001_0001_0001_0001;
-            surrounding |= (((uint)0b1000_0000_0000_1000 << board[queenLocations[i]]) | ((uint)0b1000_0000_0000_1000 << board[queenLocations[i + 1]]) | (uint)(queen >> 1)) & 0b1000_1000_1000_1111_1000_1000_1000_1000;
-            surrounding |= (((uint)0b1_0000_0000_0001_0000 << board[queenLocations[i]]) | ((uint)0b1_0000_0000_0001_0000 << board[queenLocations[i + 1]])) & 0b1111_0000_0000_0000_0000;
-            ushort smallSurounding = (ushort)(surrounding | (surrounding >> 12));
+            surrounding |= ((queen * 0b1000_0000_0000_1000) | (queen >> 1)) & 0b1000_1000_1000_1111_1000_1000_1000_1000;
+            surrounding |= (queen * 0b1_0000_0000_0001_0000) & 0b1111_0000_0000_0000_0000;
+            ushort smallSurounding = (ushort)(surrounding | (surrounding >> 20));
+            blocks = (ushort)~(blocks | queen);
             smallSurounding &= blocks;
             lose[i / 2] = smallSurounding == 0;
         }
-        return lose;
+        return lose; 
     }
 }
