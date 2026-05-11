@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using UnityEngine;
 using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.UI;
@@ -53,7 +54,6 @@ public class MouseClick : MonoBehaviour
         moveQueen(0, 13);
         moveQueen(1, 14);
         moveQueen(3, 3);
-        moveQueen(2, 0);
 
         camera = Camera.main;
 
@@ -93,7 +93,6 @@ public class MouseClick : MonoBehaviour
             if (board[queenLocations[1]] == selected) 
                 queen = 1;
             moveQueen(queen, index);
-            captureCheck(index);
             selected = 16;
             return;
         }
@@ -138,19 +137,15 @@ public class MouseClick : MonoBehaviour
 
     public void moveQueen(int queen, int position)
     {
+        for (int i = 0; i < 4; i++)
+            if (board[queenLocations[i]] == position)
+            {
+                board[queenLocations[i]] = board[queenLocations[(i/2)+((i+1)%2)]];
+                queens[i].gameObject.SetActive(false);
+            }
         board[queenLocations[queen]] = position;
         Vector2 pos = new Vector2((position % 4), -(position / 4));
         queens[queen].localPosition = pos;
-    }
-    public void captureCheck(int position, int opponent = 1)
-    {
-        for (int i = 0; i < 2; i++)
-            if (board[queenLocations[opponent * 2 + i]] == position)
-            {
-                board[queenLocations[opponent * 2 + i]] = board[queenLocations[opponent * 2 + (i + 1) % 2]];
-                queens[opponent * 2 + i].gameObject.SetActive(false);
-            }
-
     }
 
     public bool[] checkWin()
