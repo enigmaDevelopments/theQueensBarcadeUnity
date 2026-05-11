@@ -163,18 +163,26 @@ public class MouseClick : MonoBehaviour
 
     public bool checkMove(int queen, int position)
     {
+        byte queenPosition;
+        if (board[queenLocations[0]] == queen)
+            queenPosition = (byte)board[queenLocations[1]];
+        else
+            queenPosition = (byte)board[queenLocations[0]];
         int lower = Mathf.Min(queen, position);
         int upper = Mathf.Max(queen, position);
         foreach (int direction in new int[] {5, 4, 3, 1})
             if ((upper-lower) % direction == 0)
             {
                 bool vaild = true;
+                bool cantMove = false;
                 for (int i = lower + direction; i <= upper; i += direction)
-                    if (board[positions[i]] || (direction % 6 == 1 && i % 4 == 0) || (direction == 3 && i % 4 == 3))
+                    if (board[positions[i]] || i == queenPosition || cantMove || (direction % 6 == 1 && i % 4 == 0) || (direction == 3 && i % 4 == 3))
                     {
                         vaild = false;
                         break;
                     }
+                    else if (i == board[queenLocations[2]] || i == board[queenLocations[3]])
+                        cantMove = true;
                 if (vaild)
                     return true;
             }
