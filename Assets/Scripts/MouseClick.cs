@@ -93,6 +93,7 @@ public class MouseClick : MonoBehaviour
             if (board[queenLocations[1]] == selected) 
                 queen = 1;
             moveQueen(queen, index);
+            captureCheck(index);
             selected = 16;
             return;
         }
@@ -140,6 +141,16 @@ public class MouseClick : MonoBehaviour
         board[queenLocations[queen]] = position;
         Vector2 pos = new Vector2((position % 4), -(position / 4));
         queens[queen].localPosition = pos;
+    }
+    public void captureCheck(int position, int opponent = 1)
+    {
+        for (int i = 0; i < 2; i++)
+            if (board[queenLocations[opponent * 2 + i]] == position)
+            {
+                board[queenLocations[opponent * 2 + i]] = board[queenLocations[opponent * 2 + (i + 1) % 2]];
+                queens[opponent * 2 + i].gameObject.SetActive(false);
+            }
+
     }
 
     public bool[] checkWin()
