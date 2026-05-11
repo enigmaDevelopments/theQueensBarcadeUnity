@@ -75,7 +75,6 @@ public class MouseClick : MonoBehaviour
     public void Click()
     {
         totalClicked++;
-        Debug.Log(clicked);
         if (!mouseOver || !clicked) return;
         if (board[positions[index]])
             return;
@@ -85,13 +84,28 @@ public class MouseClick : MonoBehaviour
             selected = 16;
             return;
         }
-        for (int i = 0; i < 4; i++)
+        else if (selected != 16)
+        {
+            Debug.Log(true);
+            if (!checkMove(selected, index))
+                return;
+            int queen = 0;
+            if (board[queenLocations[1]] == selected) 
+                queen = 1;
+            moveQueen(queen, index);
+            selected = 16;
+            return;
+        }
+        for (int i = 0; i < 2; i++)
             if (board[queenLocations[i]] == index)
             {
                 boarder.color = selectedBoarderColor;
                 selected = index;
                 return;
             }
+        for (int i = 2; i < 4; i++)
+            if (board[queenLocations[i]] == index)
+                return;
 
         board[positions[index]] = true;
         boarder.color = selectedBoarderColor;
@@ -99,6 +113,7 @@ public class MouseClick : MonoBehaviour
     }
     IEnumerator DisableCamera()
     {
+        yield return new WaitForEndOfFrame();
         yield return new WaitForEndOfFrame();
         camera.enabled = false;
     }
@@ -116,6 +131,8 @@ public class MouseClick : MonoBehaviour
             StartCoroutine(DisableCamera());
             totalClicked = 0;
         }
+        if (boarder.color == selectedBoarderColor && selected != index)
+            boarder.color = originalBoarderColor;
     }
 
     public void moveQueen(int queen, int position)
@@ -146,19 +163,21 @@ public class MouseClick : MonoBehaviour
 
     public bool checkMove(int queen, int position)
     {
-        int lower = Mathf.Min(board[queenLocations[queen]], position);
-        int upper = Mathf.Max(board[queenLocations[queen]], position);
-        int direction = 0;
-        foreach (int dir in new int[] {1, 3, 4, 5 })
-            if (upper-lower % dir == 0)
+        int lower = Mathf.Min(queen, position);
+        int upper = Mathf.Max(queen, position);
+        foreach (int direction in new int[] {5, 4, 3, 1})
+            if ((upper-lower) % direction == 0)
             {
-                direction = dir;
-                break;
+                bool vaild = true;
+                for (int i = lower + direction; i <= upper; i += direction)
+                    if (board[positions[i]] || (direction % 6 == 1 && i % 4 == 0) || (direction == 3 && i % 4 == 3))
+                    {
+                        vaild = false;
+                        break;
+                    }
+                if (vaild)
+                    return true;
             }
-        if (direction == 0) return false;
-        for (int i = lower + direction; i < upper; i += direction)
-            if (board[positions[i]] || (direction % 6 == 1 && i % 4 == 0) || (direction == 3 && i % 4 == 1))
-                return false;
-        return true;
+        return false;
     }
 }
