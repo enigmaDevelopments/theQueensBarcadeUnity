@@ -16,6 +16,7 @@ public class MouseClick : MonoBehaviour
     public byte index;
 
     public static Transform[] queens;
+    public static WinController winController;
 
     private bool mouseOver;
     private bool clicked;
@@ -48,6 +49,7 @@ public class MouseClick : MonoBehaviour
         queenLocations[3] = BitVector32.CreateSection(15, queenLocations[2]);
         #endregion
 
+        winController = FindAnyObjectByType<WinController>();
         queens = new Transform[4];
         for (int i = 0; i < 4; i++)
             queens[i] = GameObject.FindGameObjectWithTag("queen" + (i + 1)).transform;
@@ -86,7 +88,6 @@ public class MouseClick : MonoBehaviour
         }
         else if (selected != 16)
         {
-            Debug.Log(true);
             if (!checkMove(selected, index))
                 return;
             int queen = 0;
@@ -128,6 +129,14 @@ public class MouseClick : MonoBehaviour
         }
         if (totalClicked == 16)
         {
+            bool[] winners = checkWin();
+            if (winners[0] || winners[1])
+            {
+                winController.gameEnd(winners[1], winners[0]);
+                Destroy(this);
+                return;
+            }
+
             StartCoroutine(DisableCamera());
             totalClicked = 0;
         }
@@ -140,7 +149,7 @@ public class MouseClick : MonoBehaviour
         for (int i = 0; i < 4; i++)
             if (board[queenLocations[i]] == position)
             {
-                board[queenLocations[i]] = board[queenLocations[(i/2)+((i+1)%2)]];
+                board[queenLocations[i]] = board[queenLocations[(i&0b10)+((i+1)&1)]];
                 queens[i].gameObject.SetActive(false);
             }
         board[queenLocations[queen]] = position;
@@ -150,6 +159,11 @@ public class MouseClick : MonoBehaviour
 
     public bool[] checkWin()
     {
+        if ((board[queenLocations[0]] == board[queenLocations[1]]) && (board[queenLocations[0]] == board[queenLocations[2]] || board[queenLocations[0]] == board[queenLocations[3]]))
+            return new bool[] {true, false}
+        ;
+        if ((board[queenLocations[2]] == board[queenLocations[3]]) && (board[queenLocations[0]] == board[queenLocations[2]] || board[queenLocations[1]] == board[queenLocations[2]]))
+            return new bool[] {false, true};
         bool[] lose = { false, false };
         for (int i = 0; i < 4; i += 2)
         {
