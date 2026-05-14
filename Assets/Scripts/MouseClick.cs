@@ -22,7 +22,7 @@ public class MouseClick : MonoBehaviour
     private bool clicked;
     private static bool clicking;
     private static new Camera camera;
-    private static bool initialized = false;
+    public static bool initialized = false;
     private static byte totalClicked = 0;
     private static byte selected = 16;
 
@@ -49,6 +49,7 @@ public class MouseClick : MonoBehaviour
         queenLocations[3] = BitVector32.CreateSection(15, queenLocations[2]);
         #endregion
 
+        totalClicked = 0;
         winController = FindAnyObjectByType<WinController>();
         queens = new Transform[4];
         for (int i = 0; i < 4; i++)
