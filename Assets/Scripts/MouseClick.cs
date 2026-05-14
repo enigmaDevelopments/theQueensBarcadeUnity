@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Specialized;
+using System.Threading;
 using UnityEngine;
 
 public class MouseClick : MonoBehaviour
@@ -24,6 +25,7 @@ public class MouseClick : MonoBehaviour
     public static bool initialized = false;
     private static byte totalClicked = 0;
     private static byte selected = 16;
+    private static Thread workThread;
 
     private static BitVector32 board;
     public static int[] positions = new int[16];
@@ -49,6 +51,7 @@ public class MouseClick : MonoBehaviour
         #endregion
 
         totalClicked = 0;
+        workThread = new Thread(makeMove);
         winController = FindAnyObjectByType<WinController>();
         queens = new Transform[4];
         for (int i = 0; i < 4; i++)
@@ -78,22 +81,9 @@ public class MouseClick : MonoBehaviour
     {
         totalClicked++;
         if (!mouseOver || !clicked) return;
-        if (board[positions[index]])
-            return;
         else if (selected == index)
         {
             boarder.color = originalBoarderColor;
-            selected = 16;
-            return;
-        }
-        else if (selected != 16)
-        {
-            if (!checkMove(selected, index))
-                return;
-            int queen = 0;
-            if (board[queenLocations[1]] == selected) 
-                queen = 1;
-            moveQueen(queen, index);
             selected = 16;
             return;
         }
@@ -104,6 +94,21 @@ public class MouseClick : MonoBehaviour
                 selected = index;
                 return;
             }
+        if (workThread.IsAlive) return;
+        else if (board[positions[index]]) return;
+        else if (selected != 16)
+        {
+            if (!checkMove(selected, index))
+                return;
+            int queen = 0;
+            if (board[queenLocations[1]] == selected) 
+                queen = 1;
+            moveQueen(queen, index);
+            selected = 16;
+            workThread = new Thread(makeMove);
+            workThread.Start();
+            return;
+        }
         for (int i = 2; i < 4; i++)
             if (board[queenLocations[i]] == index)
                 return;
@@ -111,6 +116,8 @@ public class MouseClick : MonoBehaviour
         board[positions[index]] = true;
         boarder.color = selectedBoarderColor;
         tile.color = blockedTileColor;
+        workThread = new Thread(makeMove);
+        workThread.Start();
     }
     IEnumerator DisableCamera()
     {
@@ -132,6 +139,7 @@ public class MouseClick : MonoBehaviour
             bool[] winners = checkWin();
             if (winners[0] || winners[1])
             {
+                workThread.Abort();
                 winController.gameEnd(winners[1], winners[0]);
                 Destroy(this);
                 return;
@@ -207,5 +215,10 @@ public class MouseClick : MonoBehaviour
                     return true;
             }
         return false;
+    }
+
+    private void makeMove()
+    {
+        Thread.Sleep(2000);
     }
 }

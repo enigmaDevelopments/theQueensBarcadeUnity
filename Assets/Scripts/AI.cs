@@ -4,10 +4,10 @@ using UnityEngine;
 
 public class AI
 {
-    public static readonly byte[] directions = { 1, 3, 4, 5 };
+    public static readonly byte[] directions = {1, 3, 4, 5};
     private static readonly uint[] walls = { 0b1110_1110_1110_1110, 0b111_0111_0111_0111, uint.MaxValue, 0b1110_1110_1110_1110, 0b111_0111_0111_0111, 0b1110_1110_1110_1110, uint.MaxValue, 0b111_0111_0111_0111 };
 
-    public Queue<BitVector32> getMoves(BitVector32 board, bool p1Turn)
+    public static Queue<BitVector32> getMoves(BitVector32 board, bool p1Turn)
     {
         Queue<BitVector32> output = new Queue<BitVector32>(38);
         uint[] pieces;
