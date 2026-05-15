@@ -12,6 +12,7 @@ public class MouseClick : MonoBehaviour
     public Color selectedBoarderColor;
     public Color originalTileColor;
     public Color blockedTileColor;
+    public ComputeShader shader;
     [Header("Tile Info")]
     public byte index;
 
@@ -50,6 +51,7 @@ public class MouseClick : MonoBehaviour
         queenLocations[3] = BitVector32.CreateSection(15, queenLocations[2]);
         #endregion
 
+        AI.shader = shader;
         totalClicked = 0;
         workThread = new Thread(makeMove);
         winController = FindAnyObjectByType<WinController>();

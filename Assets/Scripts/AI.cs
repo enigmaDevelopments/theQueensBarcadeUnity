@@ -4,9 +4,19 @@ using UnityEngine;
 
 public class AI
 {
+    public static ComputeShader shader;
     public static readonly byte[] directions = {1, 3, 4, 5};
     private static readonly uint[] walls = { 0b1110_1110_1110_1110, 0b111_0111_0111_0111, uint.MaxValue, 0b1110_1110_1110_1110, 0b111_0111_0111_0111, 0b1110_1110_1110_1110, uint.MaxValue, 0b111_0111_0111_0111 };
 
+    public static void bestMove(BitVector32 board)
+    {
+        BitVector32[] boards = {board};
+        ComputeBuffer boardBuffer = new ComputeBuffer(boards.Length, 4);
+        boardBuffer.SetData(boards);
+        shader.SetBuffer(0, "boards", boardBuffer);
+        shader.SetInt("boardCount", boards.Length);
+        shader.Dispatch(0, boards.Length/256, 1, 1);
+    }
     public static Queue<BitVector32> getMoves(BitVector32 board, bool p1Turn = false)
     {
         Queue<BitVector32> output = new Queue<BitVector32>(38);
