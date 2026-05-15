@@ -219,6 +219,6 @@ public class MouseClick : MonoBehaviour
 
     private void makeMove()
     {
-        Thread.Sleep(2000);
+        AI.getMoves(board);
     }
 }

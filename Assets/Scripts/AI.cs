@@ -7,7 +7,7 @@ public class AI
     public static readonly byte[] directions = {1, 3, 4, 5};
     private static readonly uint[] walls = { 0b1110_1110_1110_1110, 0b111_0111_0111_0111, uint.MaxValue, 0b1110_1110_1110_1110, 0b111_0111_0111_0111, 0b1110_1110_1110_1110, uint.MaxValue, 0b111_0111_0111_0111 };
 
-    public static Queue<BitVector32> getMoves(BitVector32 board, bool p1Turn)
+    public static Queue<BitVector32> getMoves(BitVector32 board, bool p1Turn = false)
     {
         Queue<BitVector32> output = new Queue<BitVector32>(38);
         uint[] pieces;
@@ -19,13 +19,13 @@ public class AI
             };
         else
             pieces = new uint[] {
-                (uint)(1 << board[MouseClick.queenLocations[0]]),
-                (uint)(1 << board[MouseClick.queenLocations[1]]),
-                (uint)((1 << board[MouseClick.queenLocations[2]]) | (1 << board[MouseClick.queenLocations[3]]))
+                (uint)(1 << board[MouseClick.queenLocations[2]]),
+                (uint)(1 << board[MouseClick.queenLocations[3]]),
+                (uint)((1 << board[MouseClick.queenLocations[0]]) | (1 << board[MouseClick.queenLocations[1]]))
             };
         uint semiBlock = (ushort)((uint)board.Data | pieces[0] | pieces[1]);
         uint block = semiBlock | pieces[2];
-        for (uint i = 1; i < 0b1000000000000000; i <<= 1)
+        for (uint i = 1; i <= 0b1000000000000000; i <<= 1)
             if ((block & i) == 0)
                 output.Enqueue(new BitVector32(board.Data | (int)i));
         semiBlock = ~semiBlock;
@@ -71,10 +71,13 @@ public class AI
         }
         for (uint i = 1, j = 0; j < 16; i <<= 1, j++)
             for (int k = 0; k < 2; k++)
-                if ((pieceMoves[k] & i) == 0)
+                if ((pieceMoves[k] & i) != 0)
                 {
                     BitVector32 newBoard = new BitVector32(board.Data);
                     newBoard[MouseClick.queenLocations[(p1Turn ? 0 : 2) + k]] = (int)j;
+                    for (int l = 0; l < 2; l++)
+                        if (board[MouseClick.queenLocations[(p1Turn ? 2 : 0) + l]] == (int)j)
+                            newBoard[MouseClick.queenLocations[(p1Turn ? 2 : 0) + l]] = board[MouseClick.queenLocations[(p1Turn ? 2 : 0) + ((l + 1) & 1)]];
                     output.Enqueue(newBoard);
                 }
         output.TrimExcess();
