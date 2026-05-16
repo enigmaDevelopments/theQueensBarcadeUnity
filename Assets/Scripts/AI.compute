@@ -22,7 +22,6 @@ uint getMoves(uint board, bool p1Turn)
     [unroll]
     for (int i = 0; i < 2; i++)
     {
-        uint curentPiece = pieces[i];
         [unroll]
         for (int j = 0; j < 4; j++)
         {
@@ -30,12 +29,12 @@ uint getMoves(uint board, bool p1Turn)
             [unroll]
             for (int k = 0; k < 2; k++)
             {
-                uint piece = curentPiece;
+                uint piece = pieces[k];
                 [unroll]
                 for (int l = 0; l < 3; l++)
                 {
-                    piece = ((k == 0) ? (piece << directions[j]) : (piece >> directions[j])) & block;
-                    moves[i] |= piece;
+                    piece = ((i == 0) ? (piece << directions[j]) : (piece >> directions[j])) & block;
+                    moves[k] |= piece;
                     piece &= pieces.z;
                 }
             }
