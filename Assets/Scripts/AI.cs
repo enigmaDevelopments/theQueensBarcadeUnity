@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class AI
 {
@@ -8,18 +9,28 @@ public class AI
     public static readonly byte[] directions = {1, 3, 4, 5};
     private static readonly uint[] walls = { 0b1110_1110_1110_1110, 0b111_0111_0111_0111, uint.MaxValue, 0b1110_1110_1110_1110, 0b111_0111_0111_0111, 0b1110_1110_1110_1110, uint.MaxValue, 0b111_0111_0111_0111 };
 
-    public static void bestMove(BitVector32 board)
+    async public static Awaitable bestMove(BitVector32 board)
     {
+        Debug.Log("Finding move");
         BitVector32[] boards = {board};
         ComputeBuffer boardBuffer = new ComputeBuffer(boards.Length, 4);
         int kernel = shader.FindKernel("CSMain");
         boardBuffer.SetData(boards);
         shader.SetBuffer(kernel, "boards", boardBuffer);
         shader.SetInt("boardCount", boards.Length);
-        shader.Dispatch(kernel, boards.Length/256, 1, 1);
+        shader.Dispatch(kernel, (int)((boards.Length/(float)256)+1), 1, 1);
         uint[] output = new uint[boards.Length];
         boardBuffer.GetData(output);
+        AsyncGPUReadbackRequest request = await AsyncGPUReadback.RequestAsync(boardBuffer);
+        boardBuffer.Release();
+        if (request.hasError)
+        {
+            Debug.Log("GPU readback error detected.");
+            return;
+        }
+        output = request.GetData<uint>().ToArray();
         Debug.Log(output[0]);
+        return;
     }
     public static Queue<BitVector32> getMoves(BitVector32 board, bool p1Turn = false)
     {

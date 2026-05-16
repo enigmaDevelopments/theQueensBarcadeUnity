@@ -1,5 +1,5 @@
 using System.Collections.Specialized;
-using System.Threading;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
@@ -22,8 +22,8 @@ public class MouseClick : MonoBehaviour
     private byte mouseOver;
     public new Camera camera;
     private SpaceData selected;
-    private Thread workThread;
     private bool rendering = false;
+    private bool working = false;
 
     private static BitVector32 board;
     public static int[] positions = new int[16];
@@ -51,7 +51,6 @@ public class MouseClick : MonoBehaviour
         #endregion
 
         AI.shader = shader;
-        workThread = new Thread(makeMove);
         moveQueen(0, 13);
         moveQueen(1, 14);
         moveQueen(3, 3);
@@ -96,7 +95,6 @@ public class MouseClick : MonoBehaviour
         bool[] winners = checkWin();
         if (winners[0] || winners[1])
         {
-            workThread.Abort();
             winController.gameEnd(winners[1], winners[0]);
             click.action.started -= Press;
             click.action.canceled -= Release;
@@ -140,7 +138,7 @@ public class MouseClick : MonoBehaviour
                 }
                 return;
             }
-        if (workThread.IsAlive) return;
+        if (working) return;
         else if (board[positions[data.index]]) return;
         else if (selected != null)
         {
@@ -152,8 +150,7 @@ public class MouseClick : MonoBehaviour
             moveQueen(queen, data.index);
             selected.boarder.color = originalBoarderColor;
             selected = null;
-            workThread = new Thread(makeMove);
-            workThread.Start();
+            makeMove();
             renderFrame();
             return;
         }
@@ -163,8 +160,7 @@ public class MouseClick : MonoBehaviour
 
         board[positions[data.index]] = true;
         data.tile.color = blockedTileColor;
-        workThread = new Thread(makeMove);
-        workThread.Start();
+        makeMove();
         renderFrame();
     }
 
@@ -233,8 +229,10 @@ public class MouseClick : MonoBehaviour
         return false;
     }
 
-    private void makeMove()
+    async void makeMove()
     {
-        //AI.bestMove(board);
+        working = true;
+        await AI.bestMove(board);
+        working = false;
     }
 }
