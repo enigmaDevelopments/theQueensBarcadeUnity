@@ -1,8 +1,9 @@
-using System.Collections;
 using System.Collections.Specialized;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
 
 public class MouseClick : MonoBehaviour
 {
@@ -15,10 +16,11 @@ public class MouseClick : MonoBehaviour
 
     public Transform[] queens;
     public WinController winController;
+    public InputActionReference click;
 
     private SpaceData[,] spaces = new SpaceData[4, 4];
     private byte mouseOver;
-    private new Camera camera;
+    public new Camera camera;
     private SpaceData selected;
     private Thread workThread;
     private bool rendering = false;
@@ -57,43 +59,57 @@ public class MouseClick : MonoBehaviour
         camera = Camera.main;
         renderFrame();
         Time.fixedDeltaTime = float.PositiveInfinity;
+
+        click.action.Enable();
+        click.action.started += Press;
+        click.action.canceled += Release;
     }
     async void renderFrame()
     {
         rendering = true;
-        Application.targetFrameRate = int.MaxValue;
+        Application.targetFrameRate = 0;
         OnDemandRendering.renderFrameInterval = 1;
         await Awaitable.EndOfFrameAsync();
-        Application.targetFrameRate = 10;
+        Application.targetFrameRate = 4;
         OnDemandRendering.renderFrameInterval = int.MaxValue;
         await Awaitable.NextFrameAsync();
         rendering = false;
     }
-    void Update()
+
+    void Press(InputAction.CallbackContext obj)
     {
         if (rendering)
             return;
-        if (Input.GetMouseButtonDown(0))
+        SpaceData data = getSpace(camera.ScreenToWorldPoint(Mouse.current.position.ReadValue()));
+        if (data == null)
+            return;
+        mouseOver = data.index;
+    }
+    void Release(InputAction.CallbackContext obj)
+    {
+        if (rendering)
+            return;
+        SpaceData data = getSpace(camera.ScreenToWorldPoint(Mouse.current.position.ReadValue()));
+        if (data == null || mouseOver != data.index)
+            return;
+        Click(data);
+        bool[] winners = checkWin();
+        if (winners[0] || winners[1])
         {
-            SpaceData data = getSpace(camera.ScreenToWorldPoint(Input.mousePosition));
-            if (data == null)
-                return;
-            mouseOver = data.index;
-        }
-        if (Input.GetMouseButtonUp(0))
-        {
-            SpaceData data = getSpace(camera.ScreenToWorldPoint(Input.mousePosition));
-            if (data == null || mouseOver != data.index)
-                return;
-            Click(data);
-            bool[] winners = checkWin();
-            if (winners[0] || winners[1])
-            {
-                workThread.Abort();
-                winController.gameEnd(winners[1], winners[0]);
-            }
+            workThread.Abort();
+            winController.gameEnd(winners[1], winners[0]);
+            click.action.started -= Press;
+            click.action.canceled -= Release;
+            click.action.started += ResetLevel;
         }
     }
+    private void ResetLevel(InputAction.CallbackContext obj)
+    {
+        click.action.started -= ResetLevel;
+        SceneManager.LoadScene(0);
+        Destroy(this);
+    }
+
     private SpaceData getSpace(Vector2 position)
     {
         if (position.x < -2f || position.x >= 2f || position.y < -2f || position.y >= 2f)
