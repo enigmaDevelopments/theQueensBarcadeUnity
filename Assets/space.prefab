@@ -10,8 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3963062152474671061}
   - component: {fileID: 2148657422553816258}
-  - component: {fileID: 1753038035436157101}
-  - component: {fileID: 3410455156537449838}
+  - component: {fileID: 1748903675426585356}
   m_Layer: 5
   m_Name: space
   m_TagString: Untagged
@@ -94,53 +93,7 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!61 &1753038035436157101
-BoxCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5355725319519749981}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_CompositeOperation: 0
-  m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
-  m_SpriteTilingProperty:
-    border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 1, y: 1}
-    newSize: {x: 1, y: 1}
-    adaptiveTilingThreshold: 0.5
-    drawMode: 0
-    adaptiveTiling: 0
-  m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
-  m_EdgeRadius: 0
---- !u!114 &3410455156537449838
+--- !u!114 &1748903675426585356
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -149,16 +102,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 5355725319519749981}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7997c27fb57573849bfc4679d0dc4a4c, type: 3}
+  m_Script: {fileID: 11500000, guid: f617ab3c1dd241344b723c87e322a8da, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: '::'
+  m_EditorClassIdentifier: Assembly-CSharp::SpaceData
   boarder: {fileID: 2148657422553816258}
   tile: {fileID: 3563113575599209331}
-  originalBoarderColor: {r: 0, g: 0, b: 0, a: 1}
-  selectedBoarderColor: {r: 0.35686275, g: 0.80784315, b: 0.98039216, a: 1}
-  originalTileColor: {r: 1, g: 1, b: 1, a: 1}
-  blockedTileColor: {r: 0.9607843, g: 0.6627451, b: 0.72156864, a: 1}
-  shader: {fileID: 7200000, guid: 9746c2e938993ad458f58b2b0c4412bd, type: 3}
   index: 0
 --- !u!1 &7271042594383716193
 GameObject:

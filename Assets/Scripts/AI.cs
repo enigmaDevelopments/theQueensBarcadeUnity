@@ -12,10 +12,14 @@ public class AI
     {
         BitVector32[] boards = {board};
         ComputeBuffer boardBuffer = new ComputeBuffer(boards.Length, 4);
+        int kernel = shader.FindKernel("CSMain");
         boardBuffer.SetData(boards);
-        shader.SetBuffer(0, "boards", boardBuffer);
+        shader.SetBuffer(kernel, "boards", boardBuffer);
         shader.SetInt("boardCount", boards.Length);
-        shader.Dispatch(0, boards.Length/256, 1, 1);
+        shader.Dispatch(kernel, boards.Length/256, 1, 1);
+        uint[] output = new uint[boards.Length];
+        boardBuffer.GetData(output);
+        Debug.Log(output[0]);
     }
     public static Queue<BitVector32> getMoves(BitVector32 board, bool p1Turn = false)
     {

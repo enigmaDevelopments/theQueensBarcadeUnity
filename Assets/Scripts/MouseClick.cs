@@ -5,28 +5,21 @@ using UnityEngine;
 
 public class MouseClick : MonoBehaviour
 {
-    
-    public SpriteRenderer boarder;
-    public SpriteRenderer tile;
+    public GameObject space;
     public Color originalBoarderColor;
     public Color selectedBoarderColor;
     public Color originalTileColor;
     public Color blockedTileColor;
     public ComputeShader shader;
-    [Header("Tile Info")]
-    public byte index;
 
-    public static Transform[] queens;
-    public static WinController winController;
+    public Transform[] queens;
+    public WinController winController;
 
-    private bool mouseOver;
-    private bool clicked;
-    private static bool clicking;
-    private static new Camera camera;
-    public static bool initialized = false;
-    private static byte totalClicked = 0;
-    private static byte selected = 16;
-    private static Thread workThread;
+    private SpaceData[,] spaces = new SpaceData[4, 4];
+    private byte mouseOver;
+    private new Camera camera;
+    private SpaceData selected;
+    private Thread workThread;
 
     private static BitVector32 board;
     public static int[] positions = new int[16];
@@ -34,10 +27,12 @@ public class MouseClick : MonoBehaviour
 
     void Awake()
     {
-        boarder.color = originalBoarderColor;
-        tile.color = originalTileColor;
-        if (initialized) return;
-        initialized = true;
+        for (float i = -1.5f, k = 0; k < 4; i++, k++)
+            for (float j = -1.5f, l = 0, m = 12; l < 4; j++, l++, m -= 4)
+            {
+                spaces[(int)k, (int)l] = Instantiate(space, new Vector3(i, j, 0), new Quaternion(0, 0, 0, 0), transform).GetComponent<SpaceData>();
+                spaces[(int)k, (int)l].index =  (byte)(m + k);
+            }
         #region bitvector setup
         board = new BitVector32(0);
         positions[0] = BitVector32.CreateMask();
@@ -52,12 +47,7 @@ public class MouseClick : MonoBehaviour
         #endregion
 
         AI.shader = shader;
-        totalClicked = 0;
         workThread = new Thread(makeMove);
-        winController = FindAnyObjectByType<WinController>();
-        queens = new Transform[4];
-        for (int i = 0; i < 4; i++)
-            queens[i] = GameObject.FindGameObjectWithTag("queen" + (i + 1)).transform;
         moveQueen(0, 13);
         moveQueen(1, 14);
         moveQueen(3, 3);
@@ -65,59 +55,75 @@ public class MouseClick : MonoBehaviour
         camera = Camera.main;
 
     }
-    void OnMouseEnter()
+
+    private void OnMouseDown()
     {
-        mouseOver = true;
-        if (clicking)
-        {
-            clicked = true;
-            clicking = false;
-        }
-    }
-    void OnMouseExit()
-    {
-        mouseOver = false;
-        clicking = false;
-    }
-    public void Click()
-    {
-        totalClicked++;
-        if (!mouseOver || !clicked) return;
-        else if (selected == index)
-        {
-            boarder.color = originalBoarderColor;
-            selected = 16;
+        SpaceData data = getSpace(camera.ScreenToWorldPoint(Input.mousePosition));
+        if (data == null)
             return;
+        mouseOver = data.index;
+    }
+    private void OnMouseUp()
+    {
+        SpaceData data = getSpace(camera.ScreenToWorldPoint(Input.mousePosition));
+        if (data == null || mouseOver != data.index)
+            return;
+        Click(data);
+        bool[] winners = checkWin();
+        if (winners[0] || winners[1])
+        {
+            workThread.Abort();
+            winController.gameEnd(winners[1], winners[0]);
         }
-        for (int i = 0; i < 2; i++)
-            if (board[queenLocations[i]] == index)
+    }
+    private SpaceData getSpace(Vector2 position)
+    {
+        if (position.x < -2f || position.x >= 2f || position.y < -2f || position.y >= 2f)
+            return null;
+        int k = Mathf.FloorToInt(position.x + 2f);
+        int l = Mathf.FloorToInt(position.y + 2f);
+        return spaces[k, l];
+    }
+    public void Click(SpaceData data)
+    {
+        if (selected != null)
+            if (selected.index == data.index)
             {
-                boarder.color = selectedBoarderColor;
-                selected = index;
+                data.boarder.color = originalBoarderColor;
+                selected.boarder.color = originalBoarderColor;
+                selected = null;
+                return;
+            }
+        for (int i = 0; i < 2; i++)
+            if (board[queenLocations[i]] == data.index)
+            {
+                data.boarder.color = selectedBoarderColor;
+                selected = data;
                 return;
             }
         if (workThread.IsAlive) return;
-        else if (board[positions[index]]) return;
-        else if (selected != 16)
+        else if (board[positions[data.index]]) return;
+        else if (selected != null)
         {
-            if (!checkMove(selected, index))
+            if (!checkMove(selected.index, data.index))
                 return;
             int queen = 0;
-            if (board[queenLocations[1]] == selected) 
+            if (board[queenLocations[1]] == selected.index)
                 queen = 1;
-            moveQueen(queen, index);
-            selected = 16;
+            moveQueen(queen, data.index);
+            selected.boarder.color = originalBoarderColor;
+            selected = null;
             workThread = new Thread(makeMove);
             workThread.Start();
             return;
         }
         for (int i = 2; i < 4; i++)
-            if (board[queenLocations[i]] == index)
+            if (board[queenLocations[i]] == data.index)
                 return;
 
-        board[positions[index]] = true;
-        boarder.color = selectedBoarderColor;
-        tile.color = blockedTileColor;
+        board[positions[data.index]] = true;
+        data.boarder.color = selectedBoarderColor;
+        data.tile.color = blockedTileColor;
         workThread = new Thread(makeMove);
         workThread.Start();
     }
@@ -126,32 +132,6 @@ public class MouseClick : MonoBehaviour
         yield return new WaitForEndOfFrame();
         yield return new WaitForEndOfFrame();
         camera.enabled = false;
-    }
-    void LateUpdate()
-    {
-        if (Input.GetMouseButtonDown(0))
-            clicking = true;
-        if (Input.GetMouseButtonUp(0))
-        {
-            Click();
-            clicked = false;
-        }
-        if (totalClicked == 16)
-        {
-            bool[] winners = checkWin();
-            if (winners[0] || winners[1])
-            {
-                workThread.Abort();
-                winController.gameEnd(winners[1], winners[0]);
-                Destroy(this);
-                return;
-            }
-
-            StartCoroutine(DisableCamera());
-            totalClicked = 0;
-        }
-        if (boarder.color == selectedBoarderColor && selected != index)
-            boarder.color = originalBoarderColor;
     }
 
     public void moveQueen(int queen, int position)
@@ -221,6 +201,6 @@ public class MouseClick : MonoBehaviour
 
     private void makeMove()
     {
-        AI.getMoves(board);
+        //AI.bestMove(board);
     }
 }

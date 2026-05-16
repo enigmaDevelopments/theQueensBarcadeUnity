@@ -6,18 +6,12 @@
 RWStructuredBuffer<uint> boards;
 uint boardCount;
 
-[numthreads(256, 1, 1)]
-void CSMain (uint3 id : SV_DispatchThreadID)
-{
-    
-}
-
-static const uint4 directions = {1, 3, 5, 4};
-static const uint2x3 walls = {{0xEEEE, 0x7777, 0xEEEE}, {0x7777, 0xEEEE, 0x7777}};
+static const uint4 directions = { 1, 3, 5, 4 };
+static const uint2x4 walls = {{0xEEEE, 0x7777, 0xEEEE, 0xFFFF}, { 0x7777, 0xEEEE, 0x7777, 0xFFFF}};
 
 uint getMoves(uint board, bool p1Turn)
 {
-    uint2 moves = {0, 0};
+    uint2 moves = { 0, 0 };
     uint3 pieces =
     {
         1 << ((board >> (p1Turn ? 16 : 24)) & 0xF),
@@ -50,5 +44,8 @@ uint getMoves(uint board, bool p1Turn)
     return moves.x | (moves.y << 16);
 }
 
-
-
+[numthreads(256, 1, 1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    boards[id.x] = getMoves(boards[id.x], false);
+}

@@ -7,9 +7,6 @@ public class Reset : MonoBehaviour
     void Update()
     {
         if (Input.GetMouseButtonDown(0))
-        {
-            MouseClick.initialized = false;
             SceneManager.LoadScene(0);
-        }
     }
 }
