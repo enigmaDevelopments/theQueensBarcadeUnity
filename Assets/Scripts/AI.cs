@@ -11,28 +11,62 @@ public class AI
 
     async public static Awaitable bestMove(BitVector32 board)
     {
-        Debug.Log("Finding move");
         BitVector32[] boards = {board};
+
         ComputeBuffer boardBuffer = new ComputeBuffer(boards.Length, 4);
-        int kernel = shader.FindKernel("CSMain");
+        ComputeBuffer indexBuffer = new ComputeBuffer(boards.Length+1, 4);
+        ComputeBuffer indexBuffer2 = new ComputeBuffer(boards.Length+1, 4);
+
+        int movesKernel = shader.FindKernel("CSMain");
+        int setIndexKernel = shader.FindKernel("SetIndexStart");
+        int scanKernel = shader.FindKernel("Scan");
+
         boardBuffer.SetData(boards);
-        shader.SetBuffer(kernel, "boards", boardBuffer);
+
+        shader.SetBuffer(movesKernel, "boards", boardBuffer);
+        shader.SetBuffer(movesKernel, "indexs", indexBuffer);
+
+
+        shader.SetBuffer(setIndexKernel, "indexs", indexBuffer);
+
         shader.SetInt("boardCount", boards.Length);
-        shader.Dispatch(kernel, (int)((boards.Length/(float)256)+1), 1, 1);
-        uint[] output = new uint[boards.Length];
-        boardBuffer.GetData(output);
-        AsyncGPUReadbackRequest request = await AsyncGPUReadback.RequestAsync(boardBuffer);
+        shader.SetBool("p1Turn", false);
+
+        shader.Dispatch(movesKernel, (boards.Length + 255) / 256, 1, 1);
+        shader.Dispatch(setIndexKernel, 1, 1, 1);
+
+        for (int i = 1; i <= (boards.Length + 1); i *= 3)
+        {
+
+            shader.SetBuffer(scanKernel, "indexs", indexBuffer);
+            shader.SetBuffer(scanKernel, "additionBuffer", indexBuffer2);
+            shader.SetInt("offset", i);
+
+
+            shader.Dispatch(scanKernel, (boards.Length/256)+1, 1, 1);
+
+            ComputeBuffer temp = indexBuffer;
+            indexBuffer = indexBuffer2;
+            indexBuffer2 = temp;
+        }
+
+
+        uint[] output = new uint[boards.Length + 1];
+
+        AsyncGPUReadbackRequest request = await AsyncGPUReadback.RequestAsync(indexBuffer);
         boardBuffer.Release();
+        indexBuffer.Release();
+        indexBuffer2.Release();
         if (request.hasError)
         {
             Debug.Log("GPU readback error detected.");
             return;
         }
         output = request.GetData<uint>().ToArray();
-        Debug.Log(output[0]);
+        arrayDebug(output);
         return;
     }
-    public static Queue<BitVector32> getMoves(BitVector32 board, bool p1Turn = false)
+    public static BitVector32[] getMoves(BitVector32 board, bool p1Turn = false)
     {
         Queue<BitVector32> output = new Queue<BitVector32>(38);
         uint[] pieces;
@@ -105,7 +139,17 @@ public class AI
                             newBoard[MouseClick.queenLocations[(p1Turn ? 2 : 0) + l]] = board[MouseClick.queenLocations[(p1Turn ? 2 : 0) + ((l + 1) & 1)]];
                     output.Enqueue(newBoard);
                 }
-        output.TrimExcess();
-        return output;
+        return output.ToArray();
+    }
+
+
+
+
+    static void arrayDebug(uint[] array)
+    {
+        string output = "";
+        for (int i = 0; i < array.Length; i++)
+            output += array[i] + ", ";
+        Debug.Log(output);
     }
 }
